@@ -11,6 +11,7 @@ and path for `struct2depth`
 ```
 source env.sh
 ```
+
 2. Create a local link to `KITTI` dataset under the structure like
 ```
 ./kitti/
@@ -23,17 +24,20 @@ source env.sh
 │   └── calib_cam_to_cam.txt
 ...
 ```
+
 3. Inference on this dataset
 ```
 source inference.sh
 ```
 The results will be in `./output` folder
+
 4. Run preparation script to generate dataset for training
 ```
 mkdir kitti_processed
 python gen_data_kitti.py
 ```
 Then the `train.txt` containing the input list will be under `kitti_processed` folder, specifying triplets used for training
+
 5. Run training
 ```
 source train.sh
