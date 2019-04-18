@@ -6,8 +6,9 @@ Credits to https://github.com/tensorflow/models/tree/master/research/struct2dept
 This is by far just an exploration
 
 ## Environment setup
-1. Make sure the `$PYTHONPATH` includes the path of [Tensorflow models github](https://github.com/tensorflow/models/tree/master/)
-and path for `struct2depth`
+1. Make sure the `$PYTHONPATH` includes 
+[the path](https://github.com/tensorflow/models/tree/master/research/struct2depth)
+ for `struct2depth`
 ```
 source env.sh
 ```
