@@ -17,13 +17,10 @@ source env.sh
 2. Create a local link to `KITTI` dataset under the structure like
 ```
 ./kitti/
-├── 2011_09_26
-│   ├── 2011_09_26_drive_0005_sync
-│   │   └─── image_02
-│   │       └─── data
-│   │           ├── *.png
-│   │           └── ...
-│   └── calib_cam_to_cam.txt
+├── img -> 2011_09_26/2011_09_26_drive_0005_sync/image_02/data
+│   ├── *.png
+│   └── ...
+├── calib_cam_to_cam.txt -> 2011_09_26/calib_cam_to_cam.txt
 ...
 ```
 
