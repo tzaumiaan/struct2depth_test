@@ -4,16 +4,19 @@ from absl import app, flags, logging
 from datetime import datetime
 import os
 import cv2
+from matplotlib.colors import hsv_to_rgb
 
+# arguments
 flags.DEFINE_string('model_dir', 'mask_rcnn_inception_v2_coco_2018_01_28', 'Model path for inference.')
 flags.DEFINE_string('model_ckpt', 'model.ckpt', 'Model checkpoint name.')
 flags.DEFINE_string('model_pb', 'frozen_inference_graph.pb', 'Model PB name.')
-
-flags.DEFINE_string('data_dir', '/home/minan/workspace/kitti/2011_09_26/2011_09_26_drive_0005_sync/image_02/data', 'Data path for inference.')
-flags.DEFINE_string('output_dir', 'output', 'Output path.')
-
+flags.DEFINE_string('data_dir', None, 'Data path for inference.')
+flags.DEFINE_string('output_dir', None, 'Output path.')
+flags.mark_flag_as_required('data_dir')
+flags.mark_flag_as_required('output_dir')
 FL = flags.FLAGS
 
+# model wrapper for mask rcnn
 class model_wrapper(object):
   def __init__(self, using_frozen_pb=True):
     self.graph = tf.Graph()
@@ -71,16 +74,19 @@ class model_wrapper(object):
       logging.info('Inference time = {}sec'.format((t1-t0).total_seconds()))
       logging.info('{} objects found'.format(num))
     # post processing ...
-    print(masks.shape)
     # purge useless dimension 
-    boxes, scores, classes = np.squeeze(boxes), np.squeeze(scores), np.squeeze(classes)
+    boxes, masks, scores, classes = np.squeeze(boxes), np.squeeze(masks), np.squeeze(scores), np.squeeze(classes)
     # take only valid results
     boxes, scores, classes = boxes[:num,:], scores[:num], classes[:num]
     # x-y reorder
     boxes = boxes[:,np.array([1,0,3,2])]
     # transform from 0-1 to 0-w and 0-h
     boxes = np.multiply(boxes, np.array([w,h,w,h])).astype(np.int32)
-    return boxes, scores, classes
+    # merge masks to one
+    seg_map = np.zeros(shape=image.shape, dtype=np.uint8)
+    for n_ in range(num)[::-1]:
+      seg_map[masks[n_]>0,:] = colorize(n_)
+    return seg_map, boxes, scores, classes
 
 def reframe_box_masks_to_image_masks(box_masks, boxes, image_height,
                                      image_width):
@@ -143,7 +149,6 @@ def vis_frame(outfile, image, bboxes, labels, scores):
   text_font = cv2.FONT_HERSHEY_SIMPLEX
   text_size = 0.7
   for i, bbox in enumerate(bboxes):
-    print(bbox, labels[i], scores[i])
     pos_min, pos_max = (bbox[0], bbox[1]), (bbox[2], bbox[3])
     cv2.rectangle(out, pos_min, pos_max, (255,0,0),3)
     text = '{:d}({:1.3f})'.format(int(labels[i]), scores[i])
@@ -151,22 +156,35 @@ def vis_frame(outfile, image, bboxes, labels, scores):
                 text_font, text_size, (255,0,0), 2, cv2.LINE_AA)
   cv2.imwrite(outfile, out)
 
+def colorize(obj_id):
+  hue = int(obj_id) % 256 # mod 256 to fit 0-255
+  hue = int('{:08b}'.format(hue)[::-1], 2) # scramble
+  hue = int(float(hue)*180/256) # scale to fit 0-179
+  sat, val = 200, 255
+  hsv = np.array([[[hue,sat,val]]], dtype=np.uint8)
+  rgb = np.squeeze(cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB))
+  return rgb
+
 def main(_):
   model = model_wrapper(using_frozen_pb=False)
   if not os.path.exists(FL.output_dir):
     os.mkdir(FL.output_dir)
-
-  for frame_idx in range(1):
+  
+  # count numer of images
+  for i_ in os.listdir(FL.data_dir):
+    [image_name, image_format] = i_.split('.', 2)
+    logging.info('Reading {}.{} ...'.format(image_name, image_format))
+    if image_format != 'png' and image_format != 'jpg':
+      continue
     t0 = datetime.now()
-    image_file = '{:010d}.png'.format(frame_idx)
-    image_file = os.path.join(FL.data_dir, image_file)
+    image_file = os.path.join(FL.data_dir, i_)
     image = cv2.cvtColor(cv2.imread(image_file), cv2.COLOR_BGR2RGB)
-    bbox_list, score_list, label_list = model.inference(image)
-    outfile = '{:010d}.png'.format(frame_idx)
+    seg_map, bbox_list, score_list, label_list = model.inference(image)
+    outfile = '{}-fseg.png'.format(image_name)
     outfile = os.path.join(FL.output_dir, outfile)
-    vis_frame(outfile, image, bbox_list, label_list, score_list)
+    cv2.imwrite(outfile, seg_map)
     exec_time = (datetime.now() - t0).total_seconds()
-    logging.info('Frame {} finished with exec time {} sec'.format(frame_idx, exec_time))
+    logging.info('Image {} finished with exec time {} sec'.format(image_name, exec_time))
   
 if __name__=='__main__':
   app.run(main)

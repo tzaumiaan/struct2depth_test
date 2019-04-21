@@ -1,3 +1,6 @@
+.DS_Store
+.*.swp
+.*.swo
 kitti
 kitti_processed
 output
