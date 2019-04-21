@@ -24,8 +24,8 @@ import numpy as np
 import cv2
 import os, glob
 
-import alignment
-from alignment import compute_overlap
+#import alignment
+#from alignment import compute_overlap
 from alignment import align
 
 

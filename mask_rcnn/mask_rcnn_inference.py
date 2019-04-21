@@ -180,7 +180,7 @@ def main(_):
     image_file = os.path.join(FL.data_dir, i_)
     image = cv2.cvtColor(cv2.imread(image_file), cv2.COLOR_BGR2RGB)
     seg_map, bbox_list, score_list, label_list = model.inference(image)
-    outfile = '{}-fseg.png'.format(image_name)
+    outfile = '{}-seg.png'.format(image_name)
     outfile = os.path.join(FL.output_dir, outfile)
     cv2.imwrite(outfile, seg_map)
     exec_time = (datetime.now() - t0).total_seconds()
