@@ -73,8 +73,11 @@ def img_scale(img, segimg=None, cam_intr=None, target_h=HEIGHT, target_w=WIDTH):
   return new_img, new_segimg, new_cam_intr
 
 def main(_):
+  train_dir = os.path.join(FL.output_dir, 'train')
   if not os.path.exists(FL.output_dir):
     os.mkdir(FL.output_dir)
+    if not os.path.exists(train_dir):
+      os.mkdir(train_dir)
   
   f_tr = open(os.path.join(FL.output_dir, 'train.txt'), 'w') 
   file_calibration = os.path.join(FL.input_dir, 'calib_cam_to_cam.txt')
@@ -104,12 +107,12 @@ def main(_):
       #align1, align2, align3 = seg_triplet[0], seg_triplet[1], seg_triplet[2]
       align1, align2, align3 = align(seg_triplet[0], seg_triplet[1], seg_triplet[2])
       cmb_seg = np.hstack([align1, align2, align3])
-      cv2.imwrite(os.path.join(FL.output_dir, output_name + '.png'), cmb)
-      cv2.imwrite(os.path.join(FL.output_dir, output_name + '-fseg.png'), cmb_seg)
-      f = open(os.path.join(FL.output_dir, output_name + '_cam.txt'), 'w')
+      cv2.imwrite(os.path.join(train_dir, output_name + '.png'), cmb)
+      cv2.imwrite(os.path.join(train_dir, output_name + '-fseg.png'), cmb_seg)
+      f = open(os.path.join(train_dir, output_name + '_cam.txt'), 'w')
       f.write(calib_representation)
       f.close()
-      f_tr.write('{} {}\n'.format(FL.output_dir, output_name))
+      f_tr.write('{} {}\n'.format('train', output_name))
       del triplet[0]
       del seg_triplet[0]
       ct+=1

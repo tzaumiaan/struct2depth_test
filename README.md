@@ -40,13 +40,30 @@ then follow these steps to run it
 ```
 cd mask_rcnn
 source run.sh
+cd ..
 ```
-*TODO* Integrate with the next step
+Now make the soft link of segmentation results to the dataset
+```
+cd kitti
+ln -s ../mask_rcnn/output segimg
+cd ..
+```
+So the dataset looks like this now
+```
+./kitti/
+├── img -> 2011_09_26/2011_09_26_drive_0005_sync/image_02/data
+│   ├── *.png
+│   └── ...
+├── segimg -> ../mask_rcnn/output
+│   ├── *-seg.png
+│   └── ...
+├── calib_cam_to_cam.txt -> 2011_09_26/calib_cam_to_cam.txt
+...
+```
 
 5. Run preparation script to generate dataset for training
 ```
-mkdir kitti_processed
-python gen_data_kitti.py
+python gen_data.py --input_dir=kitti --output_dir=kitti_processed
 ```
 Then the `train.txt` containing the input list will be under `kitti_processed` folder, specifying triplets used for training
 
