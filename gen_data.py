@@ -57,10 +57,10 @@ def get_line(file, start):
 
 def img_scale(img, segimg=None, cam_intr=None, target_h=HEIGHT, target_w=WIDTH):
   old_h, old_w, _ = img.shape
-  new_img = cv2.resize(img, (target_w, target_w))
+  new_img = cv2.resize(img, (target_w, target_h))
   if segimg is not None:
     assert segimg.shape[0:1]==img.shape[0:1], 'image size mismatch'
-    new_segimg = cv2.resize(segimg, (target_w, target_w))
+    new_segimg = cv2.resize(segimg, (target_w, target_h))
   if cam_intr is not None:
     zoom_x = float(target_w)/old_w
     zoom_y = float(target_h)/old_h
@@ -92,7 +92,8 @@ def main(_):
       segimg = cv2.imread(segimg_file)
     else:
       segimg = np.zeros(shape=img.shape) # all black
-    img, segimg, cam_intr = img_scale(img, segimg, calib_camera)
+    img, _, cam_intr = img_scale(img, segimg, calib_camera)
+    segimg = cv2.cvtColor(segimg, cv2.COLOR_BGR2GRAY)
     calib_representation = ','.join([str(c) for c in cam_intr.flatten()])
     triplet.append(img)
     seg_triplet.append(segimg)
@@ -100,11 +101,12 @@ def main(_):
     if len(triplet)==3:
       output_name = str(ct).zfill(10)
       cmb = np.hstack(triplet)
+      #align1, align2, align3 = seg_triplet[0], seg_triplet[1], seg_triplet[2]
       align1, align2, align3 = align(seg_triplet[0], seg_triplet[1], seg_triplet[2])
       cmb_seg = np.hstack([align1, align2, align3])
       cv2.imwrite(os.path.join(FL.output_dir, output_name + '.png'), cmb)
       cv2.imwrite(os.path.join(FL.output_dir, output_name + '-fseg.png'), cmb_seg)
-      f = open(os.path.join(output_dir, output_name + '_cam.txt'), 'w')
+      f = open(os.path.join(FL.output_dir, output_name + '_cam.txt'), 'w')
       f.write(calib_representation)
       f.close()
       f_tr.write('{} {}\n'.format(FL.output_dir, output_name))
