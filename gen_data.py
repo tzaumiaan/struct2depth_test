@@ -60,7 +60,8 @@ def img_scale(img, segimg=None, cam_intr=None, target_h=HEIGHT, target_w=WIDTH):
   new_img = cv2.resize(img, (target_w, target_h))
   if segimg is not None:
     assert segimg.shape[0:1]==img.shape[0:1], 'image size mismatch'
-    new_segimg = cv2.resize(segimg, (target_w, target_h))
+    # resize using INTER_NEAREST to avoid confusion for alignment
+    new_segimg = cv2.resize(segimg, (target_w, target_h), interpolation=cv2.INTER_NEAREST)
   if cam_intr is not None:
     zoom_x = float(target_w)/old_w
     zoom_y = float(target_h)/old_h
@@ -89,11 +90,10 @@ def main(_):
     logging.info('Processing {} ...'.format(img_file))
     img = cv2.imread(img_file)
     if os.path.exists(segimg_file):
-      segimg = cv2.imread(segimg_file)
+      segimg = cv2.imread(segimg_file, 0) # read as grayscale
     else:
-      segimg = np.zeros(shape=img.shape) # all black
-    img, _, cam_intr = img_scale(img, segimg, calib_camera)
-    segimg = cv2.cvtColor(segimg, cv2.COLOR_BGR2GRAY)
+      segimg = np.zeros(shape=(img.shape[0], img.shape[1])) # all black
+    img, segimg, cam_intr = img_scale(img, segimg, calib_camera)
     calib_representation = ','.join([str(c) for c in cam_intr.flatten()])
     triplet.append(img)
     seg_triplet.append(segimg)

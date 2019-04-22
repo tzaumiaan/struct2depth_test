@@ -10,6 +10,7 @@ from matplotlib.colors import hsv_to_rgb
 flags.DEFINE_string('model_dir', 'mask_rcnn_inception_v2_coco_2018_01_28', 'Model path for inference.')
 flags.DEFINE_string('model_ckpt', 'model.ckpt', 'Model checkpoint name.')
 flags.DEFINE_string('model_pb', 'frozen_inference_graph.pb', 'Model PB name.')
+flags.DEFINE_string('color', 'rgb', 'Color option for segmentation map.')
 flags.DEFINE_string('data_dir', None, 'Data path for inference.')
 flags.DEFINE_string('output_dir', None, 'Output path.')
 flags.mark_flag_as_required('data_dir')
@@ -85,7 +86,7 @@ class model_wrapper(object):
     # merge masks to one
     seg_map = np.zeros(shape=image.shape, dtype=np.uint8)
     for n_ in range(num)[::-1]:
-      seg_map[masks[n_]>0,:] = colorize(n_)
+      seg_map[masks[n_]>0,:] = colorize(n_, color=FL.color)
     return seg_map, boxes, scores, classes
 
 def reframe_box_masks_to_image_masks(box_masks, boxes, image_height,
@@ -156,13 +157,17 @@ def vis_frame(outfile, image, bboxes, labels, scores):
                 text_font, text_size, (255,0,0), 2, cv2.LINE_AA)
   cv2.imwrite(outfile, out)
 
-def colorize(obj_id):
-  hue = int(obj_id) % 256 # mod 256 to fit 0-255
-  hue = int('{:08b}'.format(hue)[::-1], 2) # scramble
-  hue = int(float(hue)*180/256) # scale to fit 0-179
-  sat, val = 200, 255
-  hsv = np.array([[[hue,sat,val]]], dtype=np.uint8)
-  rgb = np.squeeze(cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB))
+def colorize(obj_id, color='rgb'):
+  colorcode = int(obj_id) % 128 # mod 128 to fit 0-127
+  colorcode = int('{:07b}'.format(colorcode)[::-1], 2) # scramble
+  if color=='rgb':
+    hue = int(float(colorcode)*180/128) # scale to fit 0-179
+    sat, val = 200, 255
+    hsv = np.array([[[hue,sat,val]]], dtype=np.uint8)
+    rgb = np.squeeze(cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB))
+  elif color=='gray':
+    gray = int(float(colorcode)*192/128 + 63) # scale fit 0-255 and avoid dark shades
+    rgb = np.array([gray,gray,gray], dtype=np.uint8)
   return rgb
 
 def main(_):
@@ -171,7 +176,7 @@ def main(_):
     os.mkdir(FL.output_dir)
   
   # count numer of images
-  for i_ in os.listdir(FL.data_dir):
+  for i_ in sorted(os.listdir(FL.data_dir)):
     [image_name, image_format] = i_.split('.', 2)
     logging.info('Reading {}.{} ...'.format(image_name, image_format))
     if image_format != 'png' and image_format != 'jpg':
