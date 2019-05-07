@@ -13,6 +13,23 @@ Edit `env.sh` first then run it
 ```
 source env.sh
 ```
+There are 3 additional changes in original `util.py`. The first regarding `load_image()`:
+```
+-  im_data = np.fromstring(gfile.Open(img_file).read(), np.uint8)
++  im_data = np.fromstring(gfile.Open(img_file, 'rb').read(), np.uint8)
+```
+The second regarding `get_vars_to_save_and_restore()`:
+```
+-          not_loaded.remove(v.op.name)
++          logging.info('removing {} ...'.format(v.op.name))
++          if v.op.name in not_loaded:
++            not_loaded.remove(v.op.name)
+```
+And the third regarding `format_number()`:
+```
+-  locale.setlocale(locale.LC_ALL, 'en_US')
++  locale.setlocale(locale.LC_ALL, 'en_US.utf8')
+```
 
 2. Create a local link to `KITTI` dataset under the structure like
 ```
@@ -29,7 +46,7 @@ Edit `inference.sh` first for choosing the model checkpoints,
 dataset path, and output path (default `./output`),
 then run it
 ```
-source inference.sh
+source inference_kitti.sh
 ```
 The results will be in `./output` folder
 
@@ -63,11 +80,11 @@ So the dataset looks like this now
 
 5. Run preparation script to generate dataset for training
 ```
-python gen_data.py --input_dir=kitti --output_dir=kitti_processed
+python gen_data_kitti.py --input_dir=kitti --output_dir=kitti_processed
 ```
 Then the `train.txt` containing the input list will be under `kitti_processed` folder, specifying triplets used for training
 
 6. Run training
 ```
-source train.sh
+source train_kitti.sh
 ```
