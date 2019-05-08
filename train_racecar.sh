@@ -11,5 +11,5 @@ python $tf_model_root/train.py \
   --data_dir=$data_dir \
   --pretrained_ckpt=$pretrained_ckpt \
   --joint_encoder=False \
-  --batch_size=6 \
+  --batch_size=4 \
   --summary_freq=500
