@@ -3,4 +3,7 @@
 .*.swo
 kitti
 kitti_processed
-output
+racecar
+racecar_processed
+output*
+model_*
